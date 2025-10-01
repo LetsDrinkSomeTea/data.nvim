@@ -5,6 +5,7 @@
 - **Linter**: Luacheck (install via luarocks, config in `.luacheckrc`).
 - **Test Runner**: Plenary+Busted (`scripts/ci/run-tests.sh` lädt Abhängigkeiten und führt Suites aus).
 - **Static Checks**: Optional `selene` für erweitertes Linting (Phase M4).
+- **Optionale Abhängigkeit**: `lsqlite3` (Lua-Modul), um SQLite-bezogene Specs lokal laufen zu lassen.
 
 ## GitHub Actions Workflow (`.github/workflows/ci.yml`)
 1. Checkout Repo.

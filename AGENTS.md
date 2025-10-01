@@ -20,6 +20,7 @@
 - Framework: Plenary+Busted; place specs as `<feature>_spec.lua` under `tests/spec/`.
 - Keep fixtures lightweight; share helpers via `tests/spec/support/` if needed.
 - Ensure new features ship with matching specs; run `scripts/ci/run-tests.sh` before pushing.
+- SQLite-spezifische Specs benötigen das optionale Lua-Modul `lsqlite3`; ohne installierte Abhängigkeit werden sie übersprungen.
 
 ## Commit & Pull Request Guidelines
 - Write commits in imperative mood (`Add CSV header handling`); keep scope focused.
