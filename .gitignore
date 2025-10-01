@@ -1,6 +1,7 @@
 # Neovim data.nvim ignores
 /tests/.deps/
 /tests/output/
+.test-data/
 
 # Editor artefacts
 .netrwhist

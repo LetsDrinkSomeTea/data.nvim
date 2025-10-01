@@ -3,17 +3,27 @@ local M = {}
 local sessions = {}
 local order = {}
 local current_id
+local custom_storage_path
 
 local function generate_id(source)
-  local key = source or tostring(#order + 1)
-  if not sessions[key] then
-    return key
+  local base = source or tostring(#order + 1)
+  if not sessions[base] then
+    return base
   end
   local suffix = 1
-  while sessions[key .. ":" .. suffix] do
+  while sessions[string.format("%s:%d", base, suffix)] do
     suffix = suffix + 1
   end
-  return key .. ":" .. suffix
+  return string.format("%s:%d", base, suffix)
+end
+
+local function remove_from_order(id)
+  for index, value in ipairs(order) do
+    if value == id then
+      table.remove(order, index)
+      return
+    end
+  end
 end
 
 local function snapshot()
@@ -25,7 +35,9 @@ local function snapshot()
         id = session.id,
         source = session.meta.source,
         adapter = session.meta.adapter,
-        table = session.model.table,
+        table = session.model.table or session.meta.table,
+        cursor = session.cursor,
+        view = session.view,
         current = current_id == session.id,
       }
     end
@@ -33,23 +45,44 @@ local function snapshot()
   return items
 end
 
+function M.override_storage_path(path)
+  custom_storage_path = path
+end
+
 local function storage_path()
-  local ok, dir = pcall(vim.fn.stdpath, "data")
-  if not ok then
+  if custom_storage_path ~= nil then
+    if not custom_storage_path or custom_storage_path == false then
+      return nil
+    end
+    local dir = vim.fn.fnamemodify(custom_storage_path, ":h")
+    pcall(vim.fn.mkdir, dir, "p")
+    return custom_storage_path
+  end
+
+  if vim.g.data_nvim_session_file then
+    local dir = vim.fn.fnamemodify(vim.g.data_nvim_session_file, ":h")
+    pcall(vim.fn.mkdir, dir, "p")
+    return vim.g.data_nvim_session_file
+  end
+
+  local ok, base = pcall(vim.fn.stdpath, "state")
+  if not ok or not base or base == "" then
+    ok, base = pcall(vim.fn.stdpath, "data")
+    if not ok or not base or base == "" then
+      return nil
+    end
+  end
+
+  local target_dir = base .. "/data.nvim"
+  if not pcall(vim.fn.mkdir, target_dir, "p") then
     return nil
   end
-  local target = dir .. "/data.nvim"
-  local mkdir_ok = pcall(vim.fn.mkdir, target, "p")
-  if not mkdir_ok then
-    return nil
-  end
-  return target .. "/sessions.json"
+  return target_dir .. "/sessions.json"
 end
 
 local function persist_sessions()
   local path = storage_path()
   if not path then
-    vim.notify_once("data.nvim: unable to persist sessions (no writable data path)", vim.log.levels.WARN)
     return
   end
 
@@ -58,9 +91,10 @@ local function persist_sessions()
     vim.notify_once("data.nvim: failed to encode sessions for persistence", vim.log.levels.WARN)
     return
   end
-  local write_ok = pcall(vim.fn.writefile, { encoded }, path)
+
+  local write_ok, err = pcall(vim.fn.writefile, { encoded }, path, "b")
   if not write_ok then
-    vim.notify_once("data.nvim: unable to write session snapshot", vim.log.levels.WARN)
+    vim.notify_once("data.nvim: unable to write session snapshot: " .. tostring(err), vim.log.levels.WARN)
   end
 end
 
@@ -69,20 +103,37 @@ local function set_current(id)
   persist_sessions()
 end
 
-function M.attach(model, opts)
-  local meta = opts or {}
-  local id = generate_id(meta.source)
+function M.attach(model, meta)
+  meta = meta and vim.deepcopy(meta) or {}
+  local requested_id = meta.id
+  if requested_id and sessions[requested_id] then
+    remove_from_order(requested_id)
+  end
+
+  local id = requested_id or generate_id(meta.source or (model and model.source))
+  meta.id = id
+  meta.table = meta.table or (model and model.table)
+
   local session = {
     id = id,
     model = model,
     meta = meta,
-    cursor = { row = 1, col = 1 },
-    view = { top = 1 },
-    dirty = false,
+    cursor = meta.cursor and vim.deepcopy(meta.cursor) or { row = 1, col = 1 },
+    view = meta.view and vim.deepcopy(meta.view) or { top = 1 },
+    dirty = meta.dirty or false,
+    bufnr = meta.bufnr,
   }
+
   sessions[id] = session
+  remove_from_order(id)
   order[#order + 1] = id
-  set_current(id)
+
+  if meta.activate == nil or meta.activate then
+    set_current(id)
+  else
+    persist_sessions()
+  end
+
   return session
 end
 
@@ -91,7 +142,10 @@ function M.get(id)
 end
 
 function M.current()
-  return current_id and sessions[current_id] or nil
+  if current_id then
+    return sessions[current_id]
+  end
+  return nil
 end
 
 function M.set_current(id)
@@ -121,7 +175,8 @@ function M.list()
 end
 
 function M.record_dirty(session, dirty)
-  session.dirty = dirty or false
+  session.dirty = not not dirty
+  persist_sessions()
 end
 
 function M.sessions()
@@ -137,6 +192,30 @@ end
 
 function M.persist_snapshot()
   persist_sessions()
+end
+
+function M.load_snapshot()
+  local path = storage_path()
+  if not path or vim.fn.filereadable(path) == 0 then
+    return {}
+  end
+
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok or not lines or #lines == 0 then
+    return {}
+  end
+
+  local raw = table.concat(lines, "\n")
+  local decode_ok, data = pcall(vim.json.decode, raw)
+  if not decode_ok or type(data) ~= "table" then
+    return {}
+  end
+
+  return data
+end
+
+function M.snapshot()
+  return snapshot()
 end
 
 return M

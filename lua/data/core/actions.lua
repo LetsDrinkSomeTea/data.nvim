@@ -52,6 +52,11 @@ local function update_cursor(session, delta_row, delta_col)
 end
 
 local function resolve_session(session_or_id)
+  if session_or_id == nil then
+    local current = state.current()
+    assert(current, "data.nvim: no active session")
+    return current
+  end
   if type(session_or_id) == "table" then
     return session_or_id
   end
@@ -62,18 +67,31 @@ end
 
 function M.bootstrap()
   registry.bootstrap()
+  M.restore_sessions({ enter = false })
 end
 
 function M.open(source, opts)
   assert(source, "data.nvim: source is required")
-  local adapter, err = registry.resolve(source, opts)
+  local load_opts = opts or {}
+
+  local adapter, err = registry.resolve(source, load_opts)
   if not adapter then
     error(string.format("data.nvim: %s", err))
   end
 
-  local load_opts = opts or {}
   local model = adapter.load(source, load_opts)
-  local session = state.attach(model, { source = source, adapter = adapter.name })
+  local meta = {
+    source = source,
+    adapter = adapter.name,
+    table = load_opts.table,
+    id = load_opts.id,
+    activate = load_opts.activate,
+    cursor = load_opts.cursor,
+    view = load_opts.view,
+  }
+
+  local session = state.attach(model, meta)
+  session.meta.table = session.meta.table or session.model.table
   renderer.render(session, load_opts)
   return session
 end
@@ -88,7 +106,8 @@ function M.list_sessions()
       adapter = session.meta.adapter,
       table = session.model.table,
       bufnr = session.bufnr,
-      current = current == session,
+      current = current and current.id == session.id,
+      cursor = session.cursor,
     }
   end
   return entries
@@ -164,6 +183,52 @@ function M.jump(session_or_id, row, col)
   ensure_cursor(session)
   renderer.focus(session)
   return session.cursor
+end
+
+function M.restore_sessions(opts)
+  if next(state.sessions()) then
+    return {}
+  end
+
+  local restored = {}
+  local target_current
+  for _, entry in ipairs(state.load_snapshot()) do
+    local adapter = registry.get(entry.adapter)
+    if adapter then
+      local ok, session = pcall(function()
+        return M.open(entry.source, vim.tbl_extend("force", {
+          id = entry.id,
+          table = entry.table,
+          cursor = entry.cursor,
+          view = entry.view,
+          activate = false,
+          enter = false,
+          restore = true,
+        }, opts or {}))
+      end)
+      if ok and session then
+        restored[#restored + 1] = session
+        if entry.current then
+          target_current = session.id
+        end
+      else
+        local reason = session
+        vim.notify(string.format("data.nvim: failed to restore %s (%s)", entry.source, tostring(reason)), vim.log.levels.WARN)
+      end
+    else
+      vim.notify(string.format("data.nvim: adapter '%s' unavailable for %s", entry.adapter or "?", entry.source or "?"), vim.log.levels.WARN)
+    end
+  end
+
+  if target_current then
+    state.set_current(target_current)
+    local current = state.get(target_current)
+    if current then
+      renderer.focus(current)
+    end
+  end
+
+  return restored
 end
 
 return M

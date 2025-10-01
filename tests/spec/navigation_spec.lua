@@ -11,11 +11,23 @@ local function write_temp_csv(rows)
 end
 
 describe("core.actions navigation", function()
+  local snapshot_path
+
   before_each(function()
     config.setup({})
+    snapshot_path = vim.fn.tempname() .. ".json"
+    state.override_storage_path(snapshot_path)
     state.clear()
     actions.bootstrap()
     vim.api.nvim_command("enew")
+  end)
+
+  after_each(function()
+    if snapshot_path then
+      vim.fn.delete(snapshot_path)
+      snapshot_path = nil
+    end
+    state.override_storage_path(nil)
   end)
 
   it("moves cursor within table", function()
@@ -72,5 +84,26 @@ describe("core.actions navigation", function()
 
     vim.fn.delete(path_a)
     vim.fn.delete(path_b)
+  end)
+
+  it("restores sessions from snapshot", function()
+    local path = write_temp_csv({ "First,Second", "alpha,beta" })
+    local session = actions.open(path, { enter = false })
+    actions.move(session, "down")
+    state.persist_snapshot()
+
+    local snapshot_lines = vim.fn.readfile(snapshot_path)
+
+    state.clear()
+    vim.fn.writefile(snapshot_lines, snapshot_path)
+
+    local restored = actions.restore_sessions({ enter = false })
+    assert.equals(1, #restored)
+
+    local list = actions.list_sessions()
+    assert.equals(1, #list)
+    assert.equals(path, list[1].source)
+
+    vim.fn.delete(path)
   end)
 end)
