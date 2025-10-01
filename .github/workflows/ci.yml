@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        neovim: [stable, nightly]
+    env:
+      NVIM_VERSION: ${{ matrix.neovim }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: luajit
+
+      - name: Setup Luarocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install tooling
+        run: |
+          luarocks install luacheck --dev
+          curl -L "https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux.zip" -o stylua.zip
+          unzip stylua.zip -d stylua-bin
+          echo "$(pwd)/stylua-bin" >> $GITHUB_PATH
+
+      - name: Install Neovim ${{ env.NVIM_VERSION }}
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ env.NVIM_VERSION }}
+
+      - name: Lint (Stylua)
+        run: |
+          if [ -f stylua.toml ] && [ -d lua ]; then
+            stylua --check lua
+          else
+            echo "stylua übersprungen (kein stylua.toml oder lua-Verzeichnis)"
+          fi
+
+      - name: Lint (Luacheck)
+        run: |
+          if [ -f .luacheckrc ] && [ -d lua ]; then
+            luacheck lua
+          else
+            echo "luacheck übersprungen (kein .luacheckrc oder lua-Verzeichnis)"
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -x scripts/ci/run-tests.sh ]; then
+            scripts/ci/run-tests.sh ${{ env.NVIM_VERSION }}
+          else
+            echo "Tests übersprungen (scripts/ci/run-tests.sh fehlt)"
+          fi

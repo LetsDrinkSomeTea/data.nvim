@@ -1,0 +1,19 @@
+# Neovim data.nvim ignores
+/tests/.deps/
+/tests/output/
+
+# Editor artefacts
+.netrwhist
+.nvimencrypt
+.nvimlog
+*.swp
+*.swo
+*.swx
+Session.vim
+
+# Lua tooling
+luac.out
+
+# OS
+.DS_Store
+Thumbs.db
