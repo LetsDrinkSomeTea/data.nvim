@@ -150,6 +150,23 @@ local function apply_highlights(session, cfg)
   apply_focus_highlight(session, cfg)
 end
 
+local function apply_window_options(bufnr, opts)
+  local wins = vim.fn.win_findbuf(bufnr)
+  if wins and #wins > 0 then
+    for _, win in ipairs(wins) do
+      if vim.api.nvim_win_is_valid(win) then
+        if opts.wrap ~= nil then
+          vim.api.nvim_win_set_option(win, "wrap", opts.wrap)
+        end
+      end
+    end
+  end
+
+  if opts.wrap ~= nil then
+    pcall(vim.api.nvim_buf_set_option, bufnr, "wrap", opts.wrap)
+  end
+end
+
 function M.render(session, opts)
   opts = opts or {}
   local cfg = config.get()
@@ -162,16 +179,19 @@ function M.render(session, opts)
     available_width = available_width,
     min_width = cfg.column_width and cfg.column_width.min,
     max_width = cfg.column_width and cfg.column_width.max,
+    strategy = opts.strategy or cfg.column_width.strategy,
   })
 
   local lines = layout.render(rows, layout_info, { header = header })
   session.layout = layout_info
   session.rendered_lines = lines
+  session.mode = opts.mode or session.mode
 
   local bufnr = ensure_buffer(session, { enter = opts.enter ~= false })
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
+  apply_window_options(bufnr, opts)
   keymaps.apply(session)
   apply_highlights(session, cfg)
 

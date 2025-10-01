@@ -131,6 +131,32 @@ function M.setup(opts)
   end, {
     nargs = 0,
   })
+
+  vim.api.nvim_create_user_command("DataView", function(command_opts)
+    local mode = command_opts.args
+    with_current_session(function()
+      if mode == "" then
+        local current_mode = actions.mode(nil)
+        vim.notify(string.format("data.nvim: current mode %s", current_mode), vim.log.levels.INFO)
+      elseif mode == "toggle" then
+        actions.toggle_mode(nil)
+      else
+        actions.mode(nil, mode)
+      end
+    end)
+  end, {
+    nargs = "?",
+    complete = function()
+      local cfg = require("data.config").get()
+      local modes = cfg.view and cfg.view.modes or {}
+      local results = { "toggle" }
+      for name in pairs(modes) do
+        results[#results + 1] = name
+      end
+      table.sort(results)
+      return results
+    end,
+  })
 end
 
 return M

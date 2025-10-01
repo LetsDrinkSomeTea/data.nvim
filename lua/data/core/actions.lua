@@ -42,6 +42,8 @@ local function ensure_cursor(session)
   session.cursor.col = clamp(session.cursor.col, 1, max_column)
 end
 
+local apply_view_mode
+
 local function update_cursor(session, delta_row, delta_col)
   ensure_cursor(session)
   session.cursor.row = session.cursor.row + (delta_row or 0)
@@ -63,6 +65,19 @@ local function resolve_session(session_or_id)
   local session = state.get(session_or_id)
   assert(session, string.format("data.nvim: unknown session '%s'", tostring(session_or_id)))
   return session
+end
+
+local function resolve_mode(mode)
+  local cfg = config.get()
+  local modes_cfg = (cfg.view and cfg.view.modes) or {}
+  local fallback = (cfg.view and cfg.view.default_mode) or "compact"
+  local name = mode or fallback
+  if not modes_cfg[name] then
+    name = fallback
+  end
+  local view_opts = vim.tbl_deep_extend("force", {}, modes_cfg[name] or {})
+  view_opts.mode = name
+  return name, view_opts
 end
 
 function M.bootstrap()
@@ -88,11 +103,16 @@ function M.open(source, opts)
     activate = load_opts.activate,
     cursor = load_opts.cursor,
     view = load_opts.view,
+    mode = load_opts.mode,
   }
 
   local session = state.attach(model, meta)
   session.meta.table = session.meta.table or session.model.table
-  renderer.render(session, load_opts)
+  local mode_name, view_opts = resolve_mode(load_opts.mode or session.mode)
+  session.mode = mode_name
+  local render_opts = vim.tbl_deep_extend("force", {}, view_opts, load_opts)
+  renderer.render(session, render_opts)
+  state.persist_snapshot()
   return session
 end
 
@@ -104,10 +124,11 @@ function M.list_sessions()
       id = session.id,
       source = session.meta.source,
       adapter = session.meta.adapter,
-      table = session.model.table,
+      table = session.meta.table or session.model.table,
       bufnr = session.bufnr,
       current = current and current.id == session.id,
       cursor = session.cursor,
+      mode = session.mode,
     }
   end
   return entries
@@ -118,12 +139,13 @@ function M.switch(id, opts)
   state.set_current(session.id)
 
   if not session.bufnr or not vim.api.nvim_buf_is_valid(session.bufnr) then
-    renderer.render(session, opts or {})
+    apply_view_mode(session, session.mode, opts)
     return session
   end
 
   local win = (opts and opts.win) or vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win, session.bufnr)
+  apply_view_mode(session, session.mode, vim.tbl_extend("force", { enter = false }, opts or {}))
   renderer.focus(session)
   return session
 end
@@ -138,6 +160,7 @@ function M.save(session)
     source = session.meta.source,
     config = cfg,
   })
+  state.persist_snapshot()
 end
 
 function M.move(session_or_id, direction, count)
@@ -159,6 +182,7 @@ end
 
 function M.page(session_or_id, delta)
   local session = resolve_session(session_or_id)
+  session.view = session.view or { top = 1 }
   local wins = vim.fn.win_findbuf(session.bufnr or -1)
   local win = vim.api.nvim_get_current_win()
   if wins and #wins > 0 then
@@ -185,6 +209,48 @@ function M.jump(session_or_id, row, col)
   return session.cursor
 end
 
+apply_view_mode = function(session, mode, extra_opts)
+  local name, view_opts = resolve_mode(mode or session.mode)
+  session.mode = name
+  local render_opts = vim.tbl_deep_extend("force", {}, view_opts, extra_opts or {})
+  renderer.render(session, render_opts)
+  state.persist_snapshot()
+  return session.mode
+end
+
+function M.mode(session_or_id, new_mode)
+  local session = resolve_session(session_or_id)
+  if not new_mode then
+    return session.mode
+  end
+  return apply_view_mode(session, new_mode)
+end
+
+function M.toggle_mode(session_or_id)
+  local session = resolve_session(session_or_id)
+  local cfg = config.get()
+  local modes = cfg.view and cfg.view.modes or {}
+  local keys = {}
+  for key in pairs(modes) do
+    keys[#keys + 1] = key
+  end
+  table.sort(keys)
+  if #keys == 0 then
+    return session.mode
+  end
+
+  local current = session.mode or cfg.view.default_mode or keys[1]
+  local index = 1
+  for i, key in ipairs(keys) do
+    if key == current then
+      index = i
+      break
+    end
+  end
+  local next_index = (index % #keys) + 1
+  return apply_view_mode(session, keys[next_index])
+end
+
 function M.restore_sessions(opts)
   if next(state.sessions()) then
     return {}
@@ -201,6 +267,7 @@ function M.restore_sessions(opts)
           table = entry.table,
           cursor = entry.cursor,
           view = entry.view,
+          mode = entry.mode,
           activate = false,
           enter = false,
           restore = true,

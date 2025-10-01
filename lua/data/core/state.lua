@@ -38,6 +38,7 @@ local function snapshot()
         table = session.model.table or session.meta.table,
         cursor = session.cursor,
         view = session.view,
+        mode = session.mode,
         current = current_id == session.id,
       }
     end
@@ -114,12 +115,15 @@ function M.attach(model, meta)
   meta.id = id
   meta.table = meta.table or (model and model.table)
 
+  local mode = meta.mode or meta.view_mode or (meta.view and meta.view.mode)
+
   local session = {
     id = id,
     model = model,
     meta = meta,
     cursor = meta.cursor and vim.deepcopy(meta.cursor) or { row = 1, col = 1 },
     view = meta.view and vim.deepcopy(meta.view) or { top = 1 },
+    mode = mode or nil,
     dirty = meta.dirty or false,
     bufnr = meta.bufnr,
   }

@@ -37,6 +37,17 @@ function M.jump(row, col)
   return actions.jump(nil, row, col)
 end
 
+function M.mode(new_mode)
+  if new_mode == "toggle" then
+    return actions.toggle_mode(nil)
+  end
+  return actions.mode(nil, new_mode)
+end
+
+function M.toggle_mode()
+  return actions.toggle_mode(nil)
+end
+
 function M.restore_sessions(opts)
   return actions.restore_sessions(opts)
 end

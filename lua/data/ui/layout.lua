@@ -158,13 +158,20 @@ function M.measure(rows, opts)
   local min_width = opts.min_width or 3
   local max_width = opts.max_width or nil
   local available_width = opts.available_width
+  local strategy = opts.strategy or "auto"
 
   local widths = measure_content_widths(rows, header)
   for index, width in ipairs(widths) do
     widths[index] = clamp_value(width, min_width, max_width)
   end
 
-  widths = shrink_to_available(widths, min_width, available_width, gap_width)
+  if strategy == "fixed" then
+    for index, width in ipairs(widths) do
+      widths[index] = clamp_value(width, min_width, max_width)
+    end
+  else
+    widths = shrink_to_available(widths, min_width, available_width, gap_width)
+  end
 
   local total_width = sum_widths(widths) + gap_width * math.max(#widths - 1, 0)
 

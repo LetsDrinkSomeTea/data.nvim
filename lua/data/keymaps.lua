@@ -51,6 +51,10 @@ local function default_maps(bufnr)
   map(bufnr, "n", "gs", function()
     vim.cmd("DataSave")
   end, "data.nvim: save table")
+
+  map(bufnr, "n", "gv", function()
+    data.toggle_mode()
+  end, "data.nvim: toggle view mode")
 end
 
 function M.apply(session, opts)

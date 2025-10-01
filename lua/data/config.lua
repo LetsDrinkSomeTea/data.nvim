@@ -8,8 +8,8 @@ local default_config = {
   },
   view = {
     modes = {
-      compact = { wrap = false },
-      expanded = { wrap = true },
+      compact = { wrap = false, strategy = "auto" },
+      expanded = { wrap = true, strategy = "fixed" },
     },
     default_mode = "compact",
   },
