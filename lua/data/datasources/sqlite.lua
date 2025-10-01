@@ -1,19 +1,18 @@
+local csv = require("data.datasources.csv")
+
 local M = {}
 
-local ok, sqlite3 = pcall(require, "lsqlite3")
-
-local unpack = table.unpack or unpack
+M.name = "sqlite"
 
 local function is_available()
-  return ok and sqlite3 ~= nil
+  return vim.fn.executable("sqlite3") == 1
 end
 
 M.is_available = is_available
-M.name = "sqlite"
 
 local function assert_available()
   if not is_available() then
-    error("data.nvim.sqlite: optional dependency 'lsqlite3' is required")
+    error("data.nvim.sqlite: command 'sqlite3' is required")
   end
 end
 
@@ -21,56 +20,118 @@ local function quote_identifier(name)
   return string.format('"%s"', tostring(name):gsub('"', '""'))
 end
 
-local function with_db(path, callback)
-  local db = sqlite3.open(path)
-  if not db then
-    return nil, string.format("data.nvim.sqlite: unable to open database '%s'", path)
+local function run_sqlite(args, input)
+  local output = vim.fn.systemlist(args, input)
+  if vim.v.shell_error ~= 0 then
+    local message = table.concat(output, "\n")
+    if message == "" then
+      message = string.format("data.nvim.sqlite: command failed (%s)", table.concat(args, " "))
+    end
+    return nil, message
   end
-  db:busy_timeout(1000)
-
-  local ok_cb, result = pcall(callback, db)
-  local close_ok, close_err = db:close()
-  if close_ok == false then
-    return nil, close_err or "data.nvim.sqlite: failed to close database"
-  end
-  if not ok_cb then
-    return nil, result
-  end
-  return result
+  return output
 end
 
-local function list_tables(db)
+local function run_sqlite_query(source, opts)
+  local args = { "sqlite3" }
+  if opts and opts.readonly then
+    table.insert(args, "-readonly")
+  end
+  if opts and opts.mode then
+    vim.list_extend(args, opts.mode)
+  end
+  table.insert(args, source)
+  table.insert(args, opts.query)
+  return run_sqlite(args)
+end
+
+local function run_sqlite_csv(source, query)
+  local args = {
+    "sqlite3",
+    "-readonly",
+    "-header",
+    "-csv",
+    source,
+    query,
+  }
+  return run_sqlite(args)
+end
+
+local function list_tables(source)
+  local output, err = run_sqlite_query(source, {
+    readonly = true,
+    query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;",
+  })
+  if not output then
+    return nil, err
+  end
+
   local tables = {}
-  for row in db:nrows("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;") do
-    tables[#tables + 1] = row.name
+  for _, line in ipairs(output) do
+    local name = vim.trim(line)
+    if name ~= "" then
+      tables[#tables + 1] = name
+    end
   end
   return tables
 end
 
-local function table_info(db, table_name)
-  local columns = {}
-  local primary_keys = {}
-  local pragma = string.format("PRAGMA table_info(%s);", quote_identifier(table_name))
-  for row in db:nrows(pragma) do
-    columns[#columns + 1] = row.name
-    if tonumber(row.pk) == 1 then
-      primary_keys[#primary_keys + 1] = row.name
+local function parse_table_info(lines)
+  if not lines or #lines == 0 then
+    return nil, nil
+  end
+
+  local header = csv.parse_line(lines[1])
+  local name_index, pk_index = 0, 0
+  for index, column in ipairs(header) do
+    if column == "name" then
+      name_index = index
+    elseif column == "pk" then
+      pk_index = index
+    end
+  end
+
+  if name_index == 0 then
+    return nil, nil
+  end
+
+  local columns, primary_keys = {}, {}
+  for row_index = 2, #lines do
+    local fields = csv.parse_line(lines[row_index])
+    local name = fields[name_index]
+    columns[#columns + 1] = name
+    if pk_index > 0 and tonumber(fields[pk_index]) == 1 then
+      primary_keys[#primary_keys + 1] = name
     end
   end
   return columns, primary_keys
 end
 
-local function fetch_rows(db, table_name, columns)
-  local rows = {}
-  local select_sql = string.format("SELECT * FROM %s;", quote_identifier(table_name))
-  for row in db:nrows(select_sql) do
-    local ordered = {}
-    for index, column in ipairs(columns) do
-      ordered[index] = row[column]
-    end
-    rows[#rows + 1] = ordered
+local function table_info(source, table_name)
+  local query = string.format("PRAGMA table_info(%s);", quote_identifier(table_name))
+  local output, err = run_sqlite_csv(source, query)
+  if not output then
+    return nil, nil, err
   end
-  return rows
+  return parse_table_info(output)
+end
+
+local function fetch_rows(source, table_name)
+  local query = string.format("SELECT * FROM %s;", quote_identifier(table_name))
+  local output, err = run_sqlite_csv(source, query)
+  if not output then
+    return nil, nil, err
+  end
+  if #output == 0 then
+    return {}, {}
+  end
+
+  local header = csv.parse_line(output[1])
+  local rows = {}
+  for index = 2, #output do
+    rows[#rows + 1] = csv.parse_line(output[index])
+  end
+  return header, rows
 end
 
 local function sanitize_table_name(name)
@@ -78,6 +139,29 @@ local function sanitize_table_name(name)
     return nil, "table name is required"
   end
   return name
+end
+
+local function sql_quote(value)
+  if value == nil then
+    return "NULL"
+  end
+  if type(value) == "number" then
+    return tostring(value)
+  end
+  local str = tostring(value)
+  str = str:gsub("'", "''")
+  return string.format("'%s'", str)
+end
+
+local function run_sqlite_script(source, commands)
+  local script = table.concat(commands, "\n") .. "\n"
+  local args = { "sqlite3", source }
+  local output = vim.fn.system(args, script)
+  if vim.v.shell_error ~= 0 then
+    local message = (output and output ~= "") and output or "data.nvim.sqlite: script execution failed"
+    return nil, message
+  end
+  return true
 end
 
 function M.supports(source, opts)
@@ -102,132 +186,40 @@ end
 function M.load(source, opts)
   assert_available()
   opts = opts or {}
-  local result, err = with_db(source, function(db)
-    local table_name = opts.table
-    if not table_name then
-      local tables = list_tables(db)
-      table_name = tables[1]
+
+  local table_name = opts.table
+  if not table_name then
+    local tables, err = list_tables(source)
+    if not tables then
+      error(err)
     end
-    if not table_name then
-      error("data.nvim.sqlite: no tables found in database")
-    end
-
-    local columns, primary_keys = table_info(db, table_name)
-    if #columns == 0 then
-      error(string.format("data.nvim.sqlite: table '%s' has no columns", table_name))
-    end
-
-    local rows = fetch_rows(db, table_name, columns)
-    return {
-      source = source,
-      table = table_name,
-      header = columns,
-      primary_key = primary_keys,
-      rows = rows,
-    }
-  end)
-
-  if not result then
-    error(err)
-  end
-  return result
-end
-
-local function to_sqlite_values(values)
-  local converted = {}
-  for index, value in ipairs(values) do
-    if value == nil then
-      converted[index] = sqlite3.NULL
-    else
-      converted[index] = value
-    end
-  end
-  return converted
-end
-
-local function delete_rows(db, table_name)
-  local sql = string.format("DELETE FROM %s;", quote_identifier(table_name))
-  local rc = db:exec(sql)
-  if rc ~= sqlite3.OK then
-    error(db:errmsg())
-  end
-end
-
-local function insert_rows(db, table_name, columns, rows)
-  if #rows == 0 then
-    return
+    table_name = tables and tables[1]
   end
 
-  local column_list = {}
-  local placeholders = {}
-  for _, column in ipairs(columns) do
-    column_list[#column_list + 1] = quote_identifier(column)
-    placeholders[#placeholders + 1] = "?"
+  if not table_name then
+    error("data.nvim.sqlite: no tables found in database")
   end
 
-  local insert_sql = string.format(
-    "INSERT INTO %s (%s) VALUES (%s);",
-    quote_identifier(table_name),
-    table.concat(column_list, ", "),
-    table.concat(placeholders, ", ")
-  )
-
-  local stmt = db:prepare(insert_sql)
-  if not stmt then
-    error(db:errmsg())
+  local columns, primary_keys, err = table_info(source, table_name)
+  if not columns then
+    error(err or string.format("data.nvim.sqlite: unable to read schema for '%s'", table_name))
+  end
+  if #columns == 0 then
+    error(string.format("data.nvim.sqlite: table '%s' has no columns", table_name))
   end
 
-  local function finalize()
-    local rc = stmt:finalize()
-    if rc ~= sqlite3.OK then
-      error(db:errmsg())
-    end
+  local header, rows, row_err = fetch_rows(source, table_name)
+  if not header then
+    error(row_err)
   end
 
-  local ok2, err = pcall(function()
-    for _, row in ipairs(rows) do
-      local converted = to_sqlite_values(row)
-      local bind_rc = stmt:bind_values(unpack(converted))
-      if bind_rc ~= sqlite3.OK then
-        error(db:errmsg())
-      end
-      local step_rc = stmt:step()
-      if step_rc ~= sqlite3.DONE then
-        error(db:errmsg())
-      end
-      stmt:reset()
-      stmt:clear_bindings()
-    end
-  end)
-
-  finalize()
-
-  if not ok2 then
-    error(err)
-  end
-end
-
-local function write_table(db, table_name, columns, rows)
-  local rc = db:exec("BEGIN TRANSACTION;")
-  if rc ~= sqlite3.OK then
-    error(db:errmsg())
-  end
-
-  local ok_tx, err = pcall(function()
-    delete_rows(db, table_name)
-    insert_rows(db, table_name, columns, rows)
-  end)
-
-  if ok_tx then
-    local commit_rc = db:exec("COMMIT;")
-    if commit_rc ~= sqlite3.OK then
-      error(db:errmsg())
-    end
-    return
-  end
-
-  db:exec("ROLLBACK;")
-  error(err)
+  return {
+    source = source,
+    table = table_name,
+    header = header,
+    primary_key = primary_keys,
+    rows = rows,
+  }
 end
 
 function M.save(model, opts)
@@ -251,11 +243,35 @@ function M.save(model, opts)
 
   local rows = model.rows or {}
 
-  local ok_save, err = with_db(source, function(db)
-    write_table(db, table_name, columns, rows)
-  end)
+  local quoted_columns = {}
+  for index, column in ipairs(columns) do
+    quoted_columns[index] = quote_identifier(column)
+  end
+  local column_list = table.concat(quoted_columns, ", ")
 
-  if not ok_save then
+  local commands = {
+    "BEGIN TRANSACTION;",
+    string.format("DELETE FROM %s;", quote_identifier(table_name)),
+  }
+
+  for _, row in ipairs(rows) do
+    local values = {}
+    for index, value in ipairs(row) do
+      values[index] = sql_quote(value)
+    end
+    local value_list = table.concat(values, ", ")
+    commands[#commands + 1] = string.format(
+      "INSERT INTO %s (%s) VALUES (%s);",
+      quote_identifier(table_name),
+      column_list,
+      value_list
+    )
+  end
+
+  commands[#commands + 1] = "COMMIT;"
+
+  local ok, err = run_sqlite_script(source, commands)
+  if not ok then
     error(err)
   end
 end

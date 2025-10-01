@@ -1,11 +1,11 @@
 require("plenary.busted")
 
-local ok, sqlite3 = pcall(require, "lsqlite3")
+local has_sqlite = vim.fn.executable("sqlite3") == 1
 
-if not ok then
+if not has_sqlite then
   describe("datasource.sqlite", function()
-    it("skips when lsqlite3 is unavailable", function()
-      pending("lsqlite3 not available; skipping sqlite datasource specs")
+    it("skips when sqlite3 CLI is unavailable", function()
+      pending("sqlite3 executable not available; skipping sqlite datasource specs")
     end)
   end)
   return
@@ -13,31 +13,31 @@ end
 
 local sqlite_adapter = require("data.datasources.sqlite")
 
-local function collect_ages(path)
-  local db = sqlite3.open(path)
-  assert.is_truthy(db)
-
-  local ages = {}
-  for row in db:nrows("SELECT age FROM people ORDER BY id;") do
-    ages[#ages + 1] = row.age
+local function sqlite_exec(path, sql)
+  local result = vim.fn.system({ "sqlite3", path }, sql)
+  if vim.v.shell_error ~= 0 then
+    error(string.format("sqlite3 exec failed: %s", result))
   end
+  return result
+end
 
-  assert.is_true(db:close())
-  return ages
+local function sqlite_query(path, sql)
+  local rows = vim.fn.systemlist({ "sqlite3", "-readonly", path, sql })
+  if vim.v.shell_error ~= 0 then
+    error("sqlite3 query failed")
+  end
+  return rows
 end
 
 describe("datasource.sqlite", function()
   local db_path
 
   local function seed_database()
-    local db = sqlite3.open(db_path)
-    assert.is_truthy(db)
-
-    assert.equals(sqlite3.OK, db:exec([[CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT, age INTEGER);]]))
-    assert.equals(sqlite3.OK, db:exec([[INSERT INTO people (name, age) VALUES ('Ada', 30);]]))
-    assert.equals(sqlite3.OK, db:exec([[INSERT INTO people (name, age) VALUES ('Grace', 35);]]))
-
-    assert.is_true(db:close())
+    sqlite_exec(db_path, [[
+CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT, age INTEGER);
+INSERT INTO people (name, age) VALUES ('Ada', 30);
+INSERT INTO people (name, age) VALUES ('Grace', 35);
+]])
   end
 
   before_each(function()
@@ -70,13 +70,13 @@ describe("datasource.sqlite", function()
 
   it("persists row updates via save", function()
     local model = sqlite_adapter.load(db_path, { table = "people" })
-    model.rows[1][3] = 31
+    model.rows[1][3] = "31"
     model.rows[2][2] = "Grace Hopper"
 
     sqlite_adapter.save(model, { source = db_path, table = "people" })
 
-    local ages = collect_ages(db_path)
-    assert.same({ 31, 35 }, ages)
+    local ages = sqlite_query(db_path, "SELECT age FROM people ORDER BY id;")
+    assert.same({ "31", "35" }, ages)
 
     local reloaded = sqlite_adapter.load(db_path, { table = "people" })
     assert.equal("Grace Hopper", reloaded.rows[2][2])
