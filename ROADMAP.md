@@ -9,8 +9,8 @@
 - [x] CSV/TSV/SSV-Parser und Writer inklusive Encoding-Handling.
 - [x] SQLite-Adapter (Lesen/Schreiben, Tabellenliste) über `sqlite3` CLI realisiert.
 - [x] Puffer-Rendering mit Bildschirm-Fixierung und smarten Spaltenbreiten.
-- [ ] Grundlegende Navigation (Cursor, Scrollen, PageUp/Down, Jump-to-Cell).
-- [ ] Persistente Speicherpfade/Konfigurationsschnittstelle für Mehrquellen-Workflows.
+- [x] Grundlegende Navigation (Cursor, Scrollen, PageUp/Down, Jump-to-Cell).
+- [~] Persistente Speicherpfade/Konfigurationsschnittstelle für Mehrquellen-Workflows (Session-Liste & Snapshot vorhanden; weitere Automatisierung folgt).
 
 ## Phase 2 · Darstellung & Interaktion (Wochen 5-7)
 - [x] Farbige Spalten & klar markierte Kopfzeilen (Theme-Palette, Highlighting).

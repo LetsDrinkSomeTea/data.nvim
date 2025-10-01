@@ -20,8 +20,8 @@
 - [x] Issue #1.1 · CSV/TSV/SSV Parser & Writer mit Encoding-Tests (Effort: 3 PT)
 - [x] Issue #1.2 · SQLite-Adapter (Lesen/Schreiben, Tabellenliste, Querying) (Effort: 4 PT)
 - [x] Issue #1.3 · Buffer-Renderer mit Bildschirmfixierung & smarten Spalten (Effort: 3 PT)
-- [ ] Issue #1.4 · Navigation & Scroll-Logik (Line/Column, Page, Wrap) (Effort: 2 PT)
-- [ ] Issue #1.5 · Mehrquellen-Workflow (Tabs/Buffers, Persistenz) (Effort: 2 PT)
+- [x] Issue #1.4 · Navigation & Scroll-Logik (Line/Column, Page, Wrap) (Effort: 2 PT)
+- [~] Issue #1.5 · Mehrquellen-Workflow (Tabs/Buffers, Persistenz) (Effort: 2 PT) — Session-Liste & Snapshot implementiert, noch ohne Auto-Restore.
 
 ### M2 · Darstellung & Interaktion (Wochen 5-7)
 - [~] Issue #2.1 · Farbschemata, Headline-Styling, Statusline-Integration (Effort: 2 PT) — Spalten-Palette & Header-HL erledigt; Statusline offen.
