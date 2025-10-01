@@ -41,4 +41,8 @@ function M.restore_sessions(opts)
   return actions.restore_sessions(opts)
 end
 
+function M.statusline()
+  return require("data.ui.statusline").statusline_for_current()
+end
+
 return M

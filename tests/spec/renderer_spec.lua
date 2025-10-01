@@ -100,5 +100,8 @@ describe("ui.renderer", function()
     local marks = vim.api.nvim_buf_get_extmarks(session.bufnr, focus_ns, 0, -1, { details = true })
     assert.equal(1, #marks)
     assert.equals("Visual", marks[1][4].hl_group)
+
+    local status = vim.b[session.bufnr].data_statusline
+    assert.matches("focus.csv", status)
   end)
 end)

@@ -14,9 +14,9 @@
 
 ## Phase 2 · Darstellung & Interaktion (Wochen 5-7)
 - [x] Farbige Spalten & klar markierte Kopfzeilen (Theme-Palette, Highlighting).
-- [ ] Statusline-Integration und Fokus-Indikatoren.
+- [x] Statusline-Integration und Fokus-Indikatoren.
 - [ ] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen.
-- [~] Konfigurierbare Commands (User Commands vorhanden; Default-Keymaps folgen).
+- [x] Konfigurierbare Commands & Default-Keymaps.
 - [ ] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking.
 
 ## Phase 3 · Erweiterbare Module (Wochen 8-9) — ⏳ Geplant

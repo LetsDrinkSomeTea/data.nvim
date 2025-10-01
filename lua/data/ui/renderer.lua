@@ -1,5 +1,7 @@
 local config = require("data.config")
 local layout = require("data.ui.layout")
+local keymaps = require("data.keymaps")
+local statusline = require("data.ui.statusline")
 
 local M = {}
 
@@ -129,6 +131,8 @@ local function apply_focus_highlight(session, cfg)
       end
     end
   end
+
+  statusline.apply(session)
 end
 
 local function apply_highlights(session, cfg)
@@ -168,6 +172,7 @@ function M.render(session, opts)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
+  keymaps.apply(session)
   apply_highlights(session, cfg)
 
   return session

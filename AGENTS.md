@@ -18,6 +18,8 @@
 - Maintain concise inline comments for complex logic; avoid redundant narration.
 - Column farbpalette konfigurierst du über `theme.column_palette` (Index- oder Namenszuordnung, plus Fallback-HL-Gruppe).
 - User Commands erhalten CamelCase (`DataOpen`, `DataMove`); ergänzende Lua-Funktionen bleiben snake_case.
+- Default-Keymaps (hjkl, <C-d>/<C-u>, [t]/]t, gs) lassen sich via `keymaps.enabled = false` deaktivieren.
+- Statusline-Infos kommen über `statusline.enabled`/`statusline.format`; `require("data").statusline()` liefert den Text.
 
 ## Testing Guidelines
 - Framework: Plenary+Busted; place specs as `<feature>_spec.lua` under `tests/spec/`.

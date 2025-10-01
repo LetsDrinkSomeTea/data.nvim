@@ -49,6 +49,9 @@ describe("user commands", function()
     assert.is_truthy(session)
     assert.equals(1, session.cursor.row)
 
+    local statusline = require("data").statusline()
+    assert.matches("First", statusline)
+
     vim.cmd("DataMove down")
     assert.equals(2, session.cursor.row)
 

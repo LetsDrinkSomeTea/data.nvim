@@ -28,6 +28,13 @@ local default_config = {
     chunk_size = 500,
     cache_rows = true,
   },
+  keymaps = {
+    enabled = true,
+  },
+  statusline = {
+    enabled = true,
+    format = "[%s] Row %d/%d · Col %d (%s)",
+  },
 }
 
 local current_config
