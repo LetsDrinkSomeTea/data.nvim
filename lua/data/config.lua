@@ -24,6 +24,7 @@ local default_config = {
   },
   datasources = {
     priority = { "csv", "sqlite" },
+    registry = {},
   },
   performance = {
     chunk_size = 500,

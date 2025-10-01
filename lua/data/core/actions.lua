@@ -87,6 +87,20 @@ end
 
 function M.bootstrap()
   registry.bootstrap()
+  local cfg = config.get()
+  if cfg.datasources then
+    local custom = cfg.datasources.registry
+    if cfg.datasources.register and next(cfg.datasources.register) then
+      custom = cfg.datasources.register
+    end
+    if custom then
+      cfg.datasources.registry = custom
+      cfg.datasources.register = nil
+      for name, adapter in pairs(custom) do
+        registry.register(name, adapter)
+      end
+    end
+  end
   M.restore_sessions({ enter = false })
 end
 
@@ -94,7 +108,19 @@ function M.open(source, opts)
   assert(source, "data.nvim: source is required")
   local load_opts = opts or {}
 
-  local adapter, err = registry.resolve(source, load_opts)
+  local adapter
+  local err
+  if load_opts.adapter then
+    adapter = registry.get(load_opts.adapter)
+    if not adapter then
+      err = string.format("adapter '%s' is not registered", load_opts.adapter)
+    elseif adapter.supports and not adapter.supports(source, load_opts) then
+      err = string.format("adapter '%s' cannot handle %s", load_opts.adapter, source)
+      adapter = nil
+    end
+  else
+    adapter, err = registry.resolve(source, load_opts)
+  end
   if not adapter then
     error(string.format("data.nvim: %s", err))
   end

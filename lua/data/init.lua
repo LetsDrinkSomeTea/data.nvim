@@ -3,6 +3,7 @@ local actions = require("data.core.actions")
 local hooks = require("data.core.hooks")
 local state = require("data.core.state")
 local commands = require("data.commands")
+local datasource_registry = require("data.datasources.registry")
 
 local M = {}
 
@@ -88,6 +89,10 @@ end
 
 function M.clear_hooks()
   hooks.clear()
+end
+
+function M.register_datasource(name, adapter)
+  return datasource_registry.register(name, adapter)
 end
 
 return M

@@ -23,8 +23,30 @@ function M.get(name)
 end
 
 function M.resolve(source, opts)
-  for _, adapter in pairs(adapters) do
-    if not adapter.supports or adapter.supports(source, opts or {}) then
+  local cfg = require("data.config").get()
+  local priority = cfg.datasources and cfg.datasources.priority or {}
+  local checked = {}
+
+  local function consider(candidate)
+    if candidate and not checked[candidate] then
+      checked[candidate] = true
+      local adapter = adapters[candidate]
+      if adapter and (not adapter.supports or adapter.supports(source, opts or {})) then
+        return adapter
+      end
+    end
+    return nil
+  end
+
+  for _, name in ipairs(priority) do
+    local adapter = consider(name)
+    if adapter then
+      return adapter
+    end
+  end
+  for name in pairs(adapters) do
+    local adapter = consider(name)
+    if adapter then
       return adapter
     end
   end
@@ -32,6 +54,7 @@ function M.resolve(source, opts)
 end
 
 function M.bootstrap()
+  adapters = {}
   for name, adapter in pairs(builtin) do
     M.register(name, adapter)
   end
