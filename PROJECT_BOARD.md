@@ -21,12 +21,12 @@
 - [x] Issue #1.2 · SQLite-Adapter (Lesen/Schreiben, Tabellenliste, Querying) (Effort: 4 PT)
 - [x] Issue #1.3 · Buffer-Renderer mit Bildschirmfixierung & smarten Spalten (Effort: 3 PT)
 - [x] Issue #1.4 · Navigation & Scroll-Logik (Line/Column, Page, Wrap) (Effort: 2 PT)
-- [~] Issue #1.5 · Mehrquellen-Workflow (Tabs/Buffers, Persistenz) (Effort: 2 PT) — Session-Liste & Snapshot implementiert, noch ohne Auto-Restore.
+- [x] Issue #1.5 · Mehrquellen-Workflow (Tabs/Buffers, Persistenz) (Effort: 2 PT) — Session-Restore & Snapshot verfügbar.
 
 ### M2 · Darstellung & Interaktion (Wochen 5-7)
 - [~] Issue #2.1 · Farbschemata, Headline-Styling, Statusline-Integration (Effort: 2 PT) — Spalten-Palette & Header-HL erledigt; Statusline offen.
 - [ ] Issue #2.2 · Ansichtsmode-Umschaltung + Horizontal Scroll (Effort: 2.5 PT)
-- [ ] Issue #2.3 · Konfigurierbare Keymaps & Commands (Effort: 1.5 PT)
+- [~] Issue #2.3 · Konfigurierbare Keymaps & Commands (Effort: 1.5 PT) — User Commands registriert; Default-Keymaps pending.
 - [ ] Issue #2.4 · Undo/Redo & Änderungs-Tracking (Effort: 2.5 PT)
 
 ### M3 · Erweiterbarkeit (Wochen 8-9)

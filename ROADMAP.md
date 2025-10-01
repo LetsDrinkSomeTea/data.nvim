@@ -10,13 +10,13 @@
 - [x] SQLite-Adapter (Lesen/Schreiben, Tabellenliste) über `sqlite3` CLI realisiert.
 - [x] Puffer-Rendering mit Bildschirm-Fixierung und smarten Spaltenbreiten.
 - [x] Grundlegende Navigation (Cursor, Scrollen, PageUp/Down, Jump-to-Cell).
-- [~] Persistente Speicherpfade/Konfigurationsschnittstelle für Mehrquellen-Workflows (Session-Liste & Snapshot vorhanden; weitere Automatisierung folgt).
+- [x] Persistente Speicherpfade & Session-Restore für Mehrquellen-Workflows.
 
 ## Phase 2 · Darstellung & Interaktion (Wochen 5-7)
 - [x] Farbige Spalten & klar markierte Kopfzeilen (Theme-Palette, Highlighting).
 - [ ] Statusline-Integration und Fokus-Indikatoren.
 - [ ] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen.
-- [ ] Konfigurierbare Keymaps, Commands, Setup-Defaults.
+- [~] Konfigurierbare Commands (User Commands vorhanden; Default-Keymaps folgen).
 - [ ] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking.
 
 ## Phase 3 · Erweiterbare Module (Wochen 8-9) — ⏳ Geplant
