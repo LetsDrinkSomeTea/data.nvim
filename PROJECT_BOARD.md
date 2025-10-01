@@ -30,7 +30,7 @@
 - [x] Issue #2.4 · Undo/Redo & Änderungs-Tracking (Effort: 2.5 PT)
 
 ### M3 · Erweiterbarkeit (Wochen 8-9)
-- [ ] Issue #3.1 · Hook-System & Autocommands (Effort: 2 PT)
+- [x] Issue #3.1 · Hook-System & Autocommands (Effort: 2 PT)
 - [ ] Issue #3.2 · API für zusätzliche Datenquellen & Renderer (Effort: 2.5 PT)
 - [ ] Issue #3.3 · Workflow-Presets (Analyse, SQL, CSV) (Effort: 1 PT)
 

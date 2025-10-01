@@ -1,5 +1,6 @@
 local config = require("data.config")
 local state = require("data.core.state")
+local hooks = require("data.core.hooks")
 local registry = require("data.datasources.registry")
 local renderer = require("data.ui.renderer")
 
@@ -117,6 +118,12 @@ function M.open(source, opts)
   local render_opts = vim.tbl_deep_extend("force", {}, view_opts, load_opts)
   renderer.render(session, render_opts)
   state.persist_snapshot()
+  hooks.emit("TableOpened", {
+    session = session,
+    source = session.meta.source,
+    adapter = session.meta.adapter,
+    mode = session.mode,
+  })
   return session
 end
 
@@ -165,6 +172,11 @@ function M.save(session)
     config = cfg,
   })
   state.persist_snapshot()
+  hooks.emit("TableSaved", {
+    session = session,
+    source = session.meta.source,
+    adapter = session.meta.adapter,
+  })
 end
 
 function M.move(session_or_id, direction, count)
@@ -226,6 +238,10 @@ apply_view_mode = function(session, mode, extra_opts)
   end
   renderer.render(session, render_opts)
   state.persist_snapshot()
+  hooks.emit("ViewModeChanged", {
+    session = session,
+    mode = session.mode,
+  })
   return session.mode
 end
 
@@ -310,6 +326,13 @@ function M.edit(session_or_id, value, row, col)
   })
 
   apply_view_mode(session, session.mode, { enter = false })
+  hooks.emit("CellEdited", {
+    session = session,
+    row = target_row,
+    col = target_col,
+    before = previous,
+    after = value,
+  })
   return rows[target_row][target_col]
 end
 
@@ -321,6 +344,10 @@ function M.undo(session_or_id)
   end
   apply_change(session, change, "undo")
   apply_view_mode(session, session.mode, { enter = false })
+  hooks.emit("UndoApplied", {
+    session = session,
+    change = change,
+  })
   return true
 end
 
@@ -332,6 +359,10 @@ function M.redo(session_or_id)
   end
   apply_change(session, change, "redo")
   apply_view_mode(session, session.mode, { enter = false })
+  hooks.emit("RedoApplied", {
+    session = session,
+    change = change,
+  })
   return true
 end
 
@@ -345,6 +376,11 @@ function M.hscroll(session_or_id, delta)
   end
   session.view.leftcol = math.max((session.view.leftcol or 0) + step, 0)
   apply_view_mode(session, session.mode, { enter = false })
+  hooks.emit("ViewportChanged", {
+    session = session,
+    leftcol = session.view.leftcol,
+    top = session.view.top,
+  })
   return session.view.leftcol
 end
 

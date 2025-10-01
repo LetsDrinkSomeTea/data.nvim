@@ -1,5 +1,7 @@
 local config = require("data.config")
 local actions = require("data.core.actions")
+local hooks = require("data.core.hooks")
+local state = require("data.core.state")
 local commands = require("data.commands")
 
 local M = {}
@@ -41,6 +43,10 @@ function M.edit(value, row, col)
   return actions.edit(nil, value, row, col)
 end
 
+function M.save(session)
+  return actions.save(session or state.current())
+end
+
 function M.undo()
   return actions.undo(nil)
 end
@@ -70,6 +76,18 @@ end
 
 function M.statusline()
   return require("data.ui.statusline").statusline_for_current()
+end
+
+function M.on(event, handler, opts)
+  return hooks.register(event, handler, opts)
+end
+
+function M.once(event, handler)
+  return hooks.register(event, handler, { once = true })
+end
+
+function M.clear_hooks()
+  hooks.clear()
 end
 
 return M

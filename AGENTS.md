@@ -22,6 +22,7 @@
 - Statusline-Infos kommen über `statusline.enabled`/`statusline.format`; `require("data").statusline()` liefert den Text.
 - Cell-Editing erfolgt über `DataEdit` (oder `gi`), Undo/Redo via `DataUndo`/`DataRedo` bzw. `gu`/`gU`; Änderungen setzen `session.dirty` und werden persistiert.
 - Horizontal scrollst du mit `DataScroll <n>` oder den Keymaps `zH`/`zL` (Schrittweite per `view.scroll_columns`).
+- Hooks registrierst du mit `require("data").on(event, handler)` (Events: `TableOpened`, `TableSaved`, `ViewModeChanged`, `CellEdited`, `UndoApplied`, `RedoApplied`, `ViewportChanged`).
 
 ## Testing Guidelines
 - Framework: Plenary+Busted; place specs as `<feature>_spec.lua` under `tests/spec/`.

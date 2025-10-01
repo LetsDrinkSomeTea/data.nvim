@@ -20,7 +20,7 @@
 - [x] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking (Cell-Edits, Dirty-Flag, Commands).
 
 ## Phase 3 · Erweiterbare Module (Wochen 8-9) — ⏳ Geplant
-- Plugin-Hooks und Autocommands für externe Integrationen (Telescope, LSP).
+- [x] Plugin-Hooks und Autocommands-API (Events für Open/Save/Edit/Mode).
 - API für zusätzliche Datenquellen & Renderer-Layouts.
 - Presets für typische Workflows (Analyse, SQL, CSV-Editing).
 
