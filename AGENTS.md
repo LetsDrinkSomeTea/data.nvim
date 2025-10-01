@@ -15,6 +15,7 @@
 - Lua code: 2-space indentation, double quotes preferred, lines ≤100 columns (see `stylua.toml`).
 - Module names snake_case; public APIs exposed via `lua/data/init.lua` and nested modules follow `data.<area>.<module>`.
 - Maintain concise inline comments for complex logic; avoid redundant narration.
+- Column farbpalette konfigurierst du über `theme.column_palette` (Index- oder Namenszuordnung, plus Fallback-HL-Gruppe).
 
 ## Testing Guidelines
 - Framework: Plenary+Busted; place specs as `<feature>_spec.lua` under `tests/spec/`.
