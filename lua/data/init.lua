@@ -37,6 +37,18 @@ function M.jump(row, col)
   return actions.jump(nil, row, col)
 end
 
+function M.edit(value, row, col)
+  return actions.edit(nil, value, row, col)
+end
+
+function M.undo()
+  return actions.undo(nil)
+end
+
+function M.redo()
+  return actions.redo(nil)
+end
+
 function M.mode(new_mode)
   if new_mode == "toggle" then
     return actions.toggle_mode(nil)

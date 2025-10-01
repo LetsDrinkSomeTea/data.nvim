@@ -251,6 +251,79 @@ function M.toggle_mode(session_or_id)
   return apply_view_mode(session, keys[next_index])
 end
 
+local function apply_change(session, change, direction)
+  if change.type == "cell" then
+    local row = change.row
+    local col = change.col
+    local rows = session.model.rows or {}
+    if not rows[row] then
+      rows[row] = {}
+    end
+    if direction == "undo" then
+      rows[row][col] = change.before
+    else
+      rows[row][col] = change.after
+    end
+  end
+end
+
+function M.edit(session_or_id, value, row, col)
+  local session = resolve_session(session_or_id)
+  ensure_cursor(session)
+  local rows = session.model.rows or {}
+  if not rows or #rows == 0 then
+    error("data.nvim: no rows loaded")
+  end
+
+  local target_row = row or session.cursor.row
+  local target_col = col or session.cursor.col
+
+  if target_row < 1 or target_row > #rows then
+    error("data.nvim: row out of range")
+  end
+
+  rows[target_row] = rows[target_row] or {}
+  while #rows[target_row] < target_col do
+    rows[target_row][#rows[target_row] + 1] = ""
+  end
+
+  local previous = rows[target_row][target_col]
+  rows[target_row][target_col] = value
+
+  state.record_change(session, {
+    type = "cell",
+    row = target_row,
+    col = target_col,
+    before = previous,
+    after = value,
+  })
+
+  apply_view_mode(session, session.mode, { enter = false })
+  return rows[target_row][target_col]
+end
+
+function M.undo(session_or_id)
+  local session = resolve_session(session_or_id)
+  local change = state.undo_change(session)
+  if not change then
+    return false
+  end
+  apply_change(session, change, "undo")
+  apply_view_mode(session, session.mode, { enter = false })
+  return true
+end
+
+function M.redo(session_or_id)
+  local session = resolve_session(session_or_id)
+  local change = state.redo_change(session)
+  if not change then
+    return false
+  end
+  apply_change(session, change, "redo")
+  apply_view_mode(session, session.mode, { enter = false })
+  return true
+end
+
 function M.restore_sessions(opts)
   if next(state.sessions()) then
     return {}

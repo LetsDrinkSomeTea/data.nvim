@@ -27,7 +27,7 @@
 - [x] Issue #2.1 · Farbschemata, Headline-Styling, Statusline-Integration (Effort: 2 PT) — Statusline-Helper & Fokus-HL aktiv.
 - [ ] Issue #2.2 · Ansichtsmode-Umschaltung + Horizontal Scroll (Effort: 2.5 PT)
 - [x] Issue #2.3 · Konfigurierbare Keymaps & Commands (Effort: 1.5 PT)
-- [ ] Issue #2.4 · Undo/Redo & Änderungs-Tracking (Effort: 2.5 PT)
+- [x] Issue #2.4 · Undo/Redo & Änderungs-Tracking (Effort: 2.5 PT)
 
 ### M3 · Erweiterbarkeit (Wochen 8-9)
 - [ ] Issue #3.1 · Hook-System & Autocommands (Effort: 2 PT)

@@ -20,6 +20,7 @@
 - User Commands erhalten CamelCase (`DataOpen`, `DataMove`); ergänzende Lua-Funktionen bleiben snake_case.
 - Default-Keymaps (hjkl, <C-d>/<C-u>, [t]/]t, gs) lassen sich via `keymaps.enabled = false` deaktivieren.
 - Statusline-Infos kommen über `statusline.enabled`/`statusline.format`; `require("data").statusline()` liefert den Text.
+- Cell-Editing erfolgt über `DataEdit` (oder `gi`), Undo/Redo via `DataUndo`/`DataRedo` bzw. `gu`/`gU`; Änderungen setzen `session.dirty` und werden persistiert.
 
 ## Testing Guidelines
 - Framework: Plenary+Busted; place specs as `<feature>_spec.lua` under `tests/spec/`.

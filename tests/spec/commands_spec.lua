@@ -57,6 +57,15 @@ describe("user commands", function()
 
     vim.cmd("DataMove right 5")
     assert.equals(2, session.cursor.col)
+
+    vim.cmd('DataEdit updated')
+    assert.equals('updated', session.model.rows[2][2])
+
+    vim.cmd('DataUndo')
+    assert.equals('delta', session.model.rows[2][2])
+
+    vim.cmd('DataRedo')
+    assert.equals('updated', session.model.rows[2][2])
   end)
 
   it("cycles sessions with DataNext and DataPrev", function()

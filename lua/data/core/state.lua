@@ -40,6 +40,7 @@ local function snapshot()
         view = session.view,
         mode = session.mode,
         current = current_id == session.id,
+        dirty = session.dirty,
       }
     end
   end
@@ -126,6 +127,7 @@ function M.attach(model, meta)
     mode = mode or nil,
     dirty = meta.dirty or false,
     bufnr = meta.bufnr,
+    history = meta.history and vim.deepcopy(meta.history) or { past = {}, future = {} },
   }
 
   sessions[id] = session
@@ -181,6 +183,45 @@ end
 function M.record_dirty(session, dirty)
   session.dirty = not not dirty
   persist_sessions()
+end
+
+local function ensure_history(session)
+  session.history = session.history or { past = {}, future = {} }
+  session.history.past = session.history.past or {}
+  session.history.future = session.history.future or {}
+  return session.history
+end
+
+function M.record_change(session, change)
+  local history = ensure_history(session)
+  history.past[#history.past + 1] = change
+  history.future = {}
+  session.dirty = true
+  persist_sessions()
+end
+
+function M.undo_change(session)
+  local history = ensure_history(session)
+  local change = table.remove(history.past)
+  if not change then
+    return nil
+  end
+  history.future[#history.future + 1] = change
+  session.dirty = #history.past > 0
+  persist_sessions()
+  return change
+end
+
+function M.redo_change(session)
+  local history = ensure_history(session)
+  local change = table.remove(history.future)
+  if not change then
+    return nil
+  end
+  history.past[#history.past + 1] = change
+  session.dirty = true
+  persist_sessions()
+  return change
 end
 
 function M.sessions()

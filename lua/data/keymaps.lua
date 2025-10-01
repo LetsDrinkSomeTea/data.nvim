@@ -1,4 +1,5 @@
 local config = require("data.config")
+local state = require("data.core.state")
 
 local M = {}
 
@@ -55,6 +56,32 @@ local function default_maps(bufnr)
   map(bufnr, "n", "gv", function()
     data.toggle_mode()
   end, "data.nvim: toggle view mode")
+
+  map(bufnr, "n", "gi", function()
+    local session = state.current()
+    if not session then
+      return
+    end
+    local row = session.cursor and session.cursor.row or 1
+    local col = session.cursor and session.cursor.col or 1
+    local rows = session.model.rows or {}
+    local current_value = ""
+    if rows[row] and rows[row][col] ~= nil then
+      current_value = tostring(rows[row][col])
+    end
+    local new_value = vim.fn.input("Cell value: ", current_value)
+    if new_value ~= nil then
+      data.edit(new_value, row, col)
+    end
+  end, "data.nvim: edit current cell")
+
+  map(bufnr, "n", "gu", function()
+    data.undo()
+  end, "data.nvim: undo last edit")
+
+  map(bufnr, "n", "gU", function()
+    data.redo()
+  end, "data.nvim: redo last edit")
 end
 
 function M.apply(session, opts)

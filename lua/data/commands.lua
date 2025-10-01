@@ -132,6 +132,49 @@ function M.setup(opts)
     nargs = 0,
   })
 
+  vim.api.nvim_create_user_command("DataEdit", function(command_opts)
+    local fargs = command_opts.fargs
+    local row, col, value
+    if #fargs >= 3 and tonumber(fargs[1]) and tonumber(fargs[2]) then
+      row = tonumber(fargs[1])
+      col = tonumber(fargs[2])
+      value = table.concat(fargs, " ", 3)
+    else
+      value = command_opts.args
+    end
+
+    if value == nil or value == "" then
+      vim.notify("data.nvim: value required", vim.log.levels.WARN)
+      return
+    end
+
+    with_current_session(function(session)
+      actions.edit(session, value, row, col)
+    end)
+  end, {
+    nargs = "+",
+  })
+
+  vim.api.nvim_create_user_command("DataUndo", function()
+    with_current_session(function(session)
+      if not actions.undo(session) then
+        vim.notify("data.nvim: nothing to undo", vim.log.levels.INFO)
+      end
+    end)
+  end, {
+    nargs = 0,
+  })
+
+  vim.api.nvim_create_user_command("DataRedo", function()
+    with_current_session(function(session)
+      if not actions.redo(session) then
+        vim.notify("data.nvim: nothing to redo", vim.log.levels.INFO)
+      end
+    end)
+  end, {
+    nargs = 0,
+  })
+
   vim.api.nvim_create_user_command("DataView", function(command_opts)
     local mode = command_opts.args
     with_current_session(function()

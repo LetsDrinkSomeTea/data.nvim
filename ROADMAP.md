@@ -15,9 +15,9 @@
 ## Phase 2 · Darstellung & Interaktion (Wochen 5-7)
 - [x] Farbige Spalten & klar markierte Kopfzeilen (Theme-Palette, Highlighting).
 - [x] Statusline-Integration und Fokus-Indikatoren.
-- [ ] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen.
+- [ ] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen (Horizontales Offsetting geplant).
 - [x] Konfigurierbare Commands & Default-Keymaps.
-- [ ] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking.
+- [x] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking (Cell-Edits, Dirty-Flag, Commands).
 
 ## Phase 3 · Erweiterbare Module (Wochen 8-9) — ⏳ Geplant
 - Plugin-Hooks und Autocommands für externe Integrationen (Telescope, LSP).
