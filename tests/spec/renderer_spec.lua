@@ -76,4 +76,29 @@ describe("ui.renderer", function()
 
     assert.same({ "Constant", "String" }, groups)
   end)
+
+  it("adds focus highlight for current cell", function()
+    local session = {
+      model = {
+        header = { "First", "Second" },
+        rows = {
+          { "alpha", "beta" },
+        },
+      },
+      cursor = { row = 1, col = 2 },
+      meta = {
+        source = "memory://focus.csv",
+      },
+    }
+
+    renderer.render(session, { enter = false, available_width = 40 })
+
+    local namespaces = vim.api.nvim_get_namespaces()
+    local focus_ns = namespaces["data.nvim.renderer.focus"]
+    assert.is_truthy(focus_ns)
+
+    local marks = vim.api.nvim_buf_get_extmarks(session.bufnr, focus_ns, 0, -1, { details = true })
+    assert.equal(1, #marks)
+    assert.equals("Visual", marks[1][4].hl_group)
+  end)
 end)

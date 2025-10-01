@@ -4,6 +4,7 @@ local layout = require("data.ui.layout")
 local M = {}
 
 local namespace = vim.api.nvim_create_namespace("data.nvim.renderer")
+local focus_namespace = vim.api.nvim_create_namespace("data.nvim.renderer.focus")
 
 local function build_column_spans(layout_info)
   local spans = {}
@@ -91,6 +92,45 @@ local function apply_column_highlights(session, cfg, header_exists)
   end
 end
 
+local function apply_focus_highlight(session, cfg)
+  vim.api.nvim_buf_clear_namespace(session.bufnr, focus_namespace, 0, -1)
+
+  local rows = session.model.rows or {}
+  if not rows or #rows == 0 then
+    return
+  end
+
+  local cursor = session.cursor or { row = 1, col = 1 }
+  local layout_info = session.layout
+  if not layout_info then
+    return
+  end
+
+  local spans = build_column_spans(layout_info)
+  if #spans == 0 then
+    return
+  end
+
+  local header_exists = session.model.header ~= nil
+  local data_start = header_exists and 2 or 0
+  local row = math.min(math.max(cursor.row or 1, 1), #rows)
+  local col = math.min(math.max(cursor.col or 1, 1), #spans)
+  local span = spans[col]
+  local line_idx = data_start + (row - 1)
+
+  local group = cfg.theme and cfg.theme.focused_cell or "Visual"
+  vim.api.nvim_buf_add_highlight(session.bufnr, focus_namespace, group, line_idx, span[1], span[2])
+
+  local wins = vim.fn.win_findbuf(session.bufnr)
+  if wins and #wins > 0 then
+    for _, win in ipairs(wins) do
+      if vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_win_set_cursor(win, { line_idx + 1, span[1] })
+      end
+    end
+  end
+end
+
 local function apply_highlights(session, cfg)
   local header_exists = session.model.header ~= nil
   local lines = session.rendered_lines or {}
@@ -103,6 +143,7 @@ local function apply_highlights(session, cfg)
   end
 
   apply_column_highlights(session, cfg, header_exists)
+  apply_focus_highlight(session, cfg)
 end
 
 function M.render(session, opts)
@@ -130,6 +171,13 @@ function M.render(session, opts)
   apply_highlights(session, cfg)
 
   return session
+end
+
+function M.focus(session)
+  local cfg = config.get()
+  if session.bufnr and vim.api.nvim_buf_is_valid(session.bufnr) then
+    apply_focus_highlight(session, cfg)
+  end
 end
 
 return M
