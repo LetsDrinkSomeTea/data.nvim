@@ -16,7 +16,10 @@ local default_config = {
   theme = {
     header = "Title",
     focused_cell = "Visual",
-    column_palette = {},
+    column_palette = {
+      by_index = { "Type", "Identifier", "Function", "Number" },
+      fallback = "Normal",
+    },
   },
   datasources = {
     priority = { "csv", "sqlite" },
