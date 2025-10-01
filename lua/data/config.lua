@@ -12,6 +12,7 @@ local default_config = {
       expanded = { wrap = true, strategy = "fixed" },
     },
     default_mode = "compact",
+    scroll_columns = 8,
   },
   theme = {
     header = "Title",

@@ -114,6 +114,18 @@ function M.setup(opts)
     nargs = "?",
   })
 
+  vim.api.nvim_create_user_command("DataScroll", function(command_opts)
+    local delta = tonumber(command_opts.args)
+    if delta == nil then
+      delta = require("data.config").get().view.scroll_columns or 8
+    end
+    with_current_session(function(session)
+      actions.hscroll(session, delta)
+    end)
+  end, {
+    nargs = "?",
+  })
+
   vim.api.nvim_create_user_command("DataJump", function(command_opts)
     local row = tonumber(command_opts.fargs[1])
     local col = tonumber(command_opts.fargs[2])

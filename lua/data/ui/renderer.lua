@@ -150,7 +150,7 @@ local function apply_highlights(session, cfg)
   apply_focus_highlight(session, cfg)
 end
 
-local function apply_window_options(bufnr, opts)
+local function apply_window_options(session, bufnr, opts)
   local wins = vim.fn.win_findbuf(bufnr)
   if wins and #wins > 0 then
     for _, win in ipairs(wins) do
@@ -158,6 +158,13 @@ local function apply_window_options(bufnr, opts)
         if opts.wrap ~= nil then
           vim.api.nvim_win_set_option(win, "wrap", opts.wrap)
         end
+        local view = {
+          topline = session.view and session.view.top or 1,
+          leftcol = (opts.wrap and opts.wrap ~= false) and 0 or (session.view and session.view.leftcol or 0),
+        }
+        view.topline = math.max(view.topline or 1, 1)
+        view.leftcol = math.max(view.leftcol or 0, 0)
+        pcall(vim.fn.winrestview, view)
       end
     end
   end
@@ -191,7 +198,7 @@ function M.render(session, opts)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
-  apply_window_options(bufnr, opts)
+  apply_window_options(session, bufnr, opts)
   keymaps.apply(session)
   apply_highlights(session, cfg)
 

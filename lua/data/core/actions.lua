@@ -35,11 +35,15 @@ end
 
 local function ensure_cursor(session)
   session.cursor = session.cursor or { row = 1, col = 1 }
+  session.view = session.view or { top = 1, leftcol = 0 }
+  session.view.top = session.view.top or 1
+  session.view.leftcol = session.view.leftcol or 0
   local rows = session.model.rows or {}
   local max_row = math.max(#rows, 1)
   local max_column = column_count(session)
   session.cursor.row = clamp(session.cursor.row, 1, max_row)
   session.cursor.col = clamp(session.cursor.col, 1, max_column)
+  session.view.top = session.cursor.row
 end
 
 local apply_view_mode
@@ -182,7 +186,7 @@ end
 
 function M.page(session_or_id, delta)
   local session = resolve_session(session_or_id)
-  session.view = session.view or { top = 1 }
+  session.view = session.view or { top = 1, leftcol = 0 }
   local wins = vim.fn.win_findbuf(session.bufnr or -1)
   local win = vim.api.nvim_get_current_win()
   if wins and #wins > 0 then
@@ -196,7 +200,11 @@ function M.page(session_or_id, delta)
 
   local height = vim.api.nvim_win_get_height(win)
   local step = math.max(height - 3, 1)
-  return update_cursor(session, (delta or 1) * step, 0)
+  local rows = session.model.rows or {}
+  local cursor = update_cursor(session, (delta or 1) * step, 0)
+  session.view.top = clamp(cursor.row - math.floor(height / 2), 1, math.max(#rows, 1))
+  apply_view_mode(session, session.mode, { enter = false })
+  return cursor
 end
 
 function M.jump(session_or_id, row, col)
@@ -213,6 +221,9 @@ apply_view_mode = function(session, mode, extra_opts)
   local name, view_opts = resolve_mode(mode or session.mode)
   session.mode = name
   local render_opts = vim.tbl_deep_extend("force", {}, view_opts, extra_opts or {})
+  if render_opts.wrap then
+    session.view.leftcol = 0
+  end
   renderer.render(session, render_opts)
   state.persist_snapshot()
   return session.mode
@@ -322,6 +333,19 @@ function M.redo(session_or_id)
   apply_change(session, change, "redo")
   apply_view_mode(session, session.mode, { enter = false })
   return true
+end
+
+function M.hscroll(session_or_id, delta)
+  local session = resolve_session(session_or_id)
+  session.view = session.view or { top = 1, leftcol = 0 }
+  local cfg = config.get()
+  local step = delta
+  if step == nil then
+    step = cfg.view and cfg.view.scroll_columns or 8
+  end
+  session.view.leftcol = math.max((session.view.leftcol or 0) + step, 0)
+  apply_view_mode(session, session.mode, { enter = false })
+  return session.view.leftcol
 end
 
 function M.restore_sessions(opts)

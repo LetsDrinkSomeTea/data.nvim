@@ -15,7 +15,7 @@
 ## Phase 2 · Darstellung & Interaktion (Wochen 5-7)
 - [x] Farbige Spalten & klar markierte Kopfzeilen (Theme-Palette, Highlighting).
 - [x] Statusline-Integration und Fokus-Indikatoren.
-- [ ] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen (Horizontales Offsetting geplant).
+- [x] Umschaltbare Ansichten (gekürzte vs. Vollbreite) mit horizontalem Scrollen (View-Modes + Leftcol-Scroll).
 - [x] Konfigurierbare Commands & Default-Keymaps.
 - [x] Undo/Redo-Stack pro Tabelle und Änderungs-Tracking (Cell-Edits, Dirty-Flag, Commands).
 

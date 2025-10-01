@@ -52,6 +52,11 @@ describe("view modes", function()
 
     data.mode("compact")
     assert.equals("compact", session.mode)
+
+    data.hscroll(10)
+    assert.is_true(session.view.leftcol >= 10)
+    data.mode("expanded")
+    assert.equals(0, session.view.leftcol)
   end)
 
   it("persists mode in snapshot", function()

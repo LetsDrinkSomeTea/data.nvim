@@ -118,12 +118,16 @@ function M.attach(model, meta)
 
   local mode = meta.mode or meta.view_mode or (meta.view and meta.view.mode)
 
+  meta.view = meta.view or {}
+  meta.view.top = meta.view.top or 1
+  meta.view.leftcol = meta.view.leftcol or 0
+
   local session = {
     id = id,
     model = model,
     meta = meta,
     cursor = meta.cursor and vim.deepcopy(meta.cursor) or { row = 1, col = 1 },
-    view = meta.view and vim.deepcopy(meta.view) or { top = 1 },
+    view = vim.deepcopy(meta.view),
     mode = mode or nil,
     dirty = meta.dirty or false,
     bufnr = meta.bufnr,

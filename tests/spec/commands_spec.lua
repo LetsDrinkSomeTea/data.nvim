@@ -66,6 +66,9 @@ describe("user commands", function()
 
     vim.cmd('DataRedo')
     assert.equals('updated', session.model.rows[2][2])
+
+    vim.cmd('DataScroll 5')
+    assert.is_true((session.view.leftcol or 0) >= 5)
   end)
 
   it("cycles sessions with DataNext and DataPrev", function()

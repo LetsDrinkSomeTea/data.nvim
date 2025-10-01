@@ -49,6 +49,10 @@ function M.redo()
   return actions.redo(nil)
 end
 
+function M.hscroll(delta)
+  return actions.hscroll(nil, delta)
+end
+
 function M.mode(new_mode)
   if new_mode == "toggle" then
     return actions.toggle_mode(nil)

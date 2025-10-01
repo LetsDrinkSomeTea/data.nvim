@@ -57,6 +57,14 @@ local function default_maps(bufnr)
     data.toggle_mode()
   end, "data.nvim: toggle view mode")
 
+  map(bufnr, "n", "zH", function()
+    data.hscroll(-1 * (config.get().view.scroll_columns or 8))
+  end, "data.nvim: scroll view left")
+
+  map(bufnr, "n", "zL", function()
+    data.hscroll(config.get().view.scroll_columns or 8)
+  end, "data.nvim: scroll view right")
+
   map(bufnr, "n", "gi", function()
     local session = state.current()
     if not session then
