@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, workflow ]
   pull_request:
     branches: [ "*" ]
 
@@ -19,9 +19,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Lua
-        uses: leafo/gh-actions-lua@v10
+        uses: leafo/gh-actions-lua@v12
         with:
-          luaVersion: luajit
+          luaVersion: "luajit"
 
       - name: Setup Luarocks
         uses: leafo/gh-actions-luarocks@v4
