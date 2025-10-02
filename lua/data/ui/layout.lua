@@ -117,21 +117,6 @@ local function shrink_to_available(widths, min_width, available_width, gap_width
   return widths
 end
 
-local function trim_last_char(str)
-  local len = #str
-  if len == 0 then
-    return str
-  end
-  while len > 0 do
-    local byte = str:byte(len)
-    len = len - 1
-    if not byte or byte < 128 or byte >= 192 then
-      return str:sub(1, len + 1)
-    end
-  end
-  return ""
-end
-
 local function clip_text(text, width)
   if width <= 0 then
     return ""
@@ -141,13 +126,18 @@ local function clip_text(text, width)
     return current
   end
 
-  local result = current
-  local guard = 0
-  while display_width(result) > width and #result > 0 do
-    result = trim_last_char(result)
-    guard = guard + 1
-    if guard > 4096 then
-      break
+  local total_chars = vim.fn.strchars(current)
+  local left, right = 0, total_chars
+  local result = ""
+  while left <= right do
+    local mid = math.floor((left + right) / 2)
+    local candidate = vim.fn.strcharpart(current, 0, mid)
+    local w = display_width(candidate)
+    if w > width then
+      right = mid - 1
+    else
+      result = candidate
+      left = mid + 1
     end
   end
   return result
