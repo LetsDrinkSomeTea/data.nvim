@@ -192,7 +192,11 @@ function M.render(session, opts)
 
   local bufnr = ensure_buffer(session, { enter = opts.enter ~= false })
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  local normalized = {}
+  for idx, line in ipairs(lines) do
+    normalized[idx] = line:gsub("\r", "")
+  end
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, normalized)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
   apply_window_options(session, bufnr, opts)
   keymaps.apply(session)
