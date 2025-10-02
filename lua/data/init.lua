@@ -10,6 +10,7 @@ local M = {}
 function M.setup(opts)
   opts = opts or {}
   config.setup(opts)
+  vim.g.data_setup_completed = true
   actions.bootstrap()
   if opts.commands ~= false then
     commands.setup(opts.commands)

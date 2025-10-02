@@ -18,6 +18,7 @@
 ```lua
 {
   "LetsDrinkSomeTea/data.nvim",
+  -- auto-setup runs by default; provide opts to configure
   config = function()
     require("data").setup({
       -- optional datasource registration
@@ -42,6 +43,8 @@ use {
   end,
 }
 ```
+
+Automatic setup runs as soon as the plugin loads. To opt out (for deferred configuration), set `vim.g.data_auto_setup = false` **before** loading and call `require("data").setup()` manually.
 
 You can also clone and add to `runtimepath` manually.
 

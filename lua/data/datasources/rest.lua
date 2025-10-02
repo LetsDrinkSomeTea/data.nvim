@@ -1,7 +1,5 @@
 local M = {}
 
-local json = require("vim.json")
-
 M.name = "rest"
 
 function M.is_available()
@@ -30,7 +28,10 @@ local function request(url, opts)
   if vim.v.shell_error ~= 0 then
     error(string.format("curl request failed (%s)", url))
   end
-  local parsed = json.decode(output)
+  local ok, parsed = pcall(vim.json.decode, output)
+  if not ok then
+    error(string.format("rest adapter: failed to decode response (%s)", parsed))
+  end
   return parsed
 end
 
