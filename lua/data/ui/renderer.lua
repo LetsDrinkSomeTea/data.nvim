@@ -155,12 +155,10 @@ local function apply_window_options(session, bufnr, opts)
   if wins and #wins > 0 then
     for _, win in ipairs(wins) do
       if vim.api.nvim_win_is_valid(win) then
-        if opts.wrap ~= nil then
-          vim.api.nvim_win_set_option(win, "wrap", opts.wrap)
-        end
+        pcall(vim.api.nvim_win_set_option, win, "wrap", false)
         local view = {
           topline = session.view and session.view.top or 1,
-          leftcol = (opts.wrap and opts.wrap ~= false) and 0 or (session.view and session.view.leftcol or 0),
+          leftcol = session.view and session.view.leftcol or 0,
         }
         view.topline = math.max(view.topline or 1, 1)
         view.leftcol = math.max(view.leftcol or 0, 0)
@@ -169,9 +167,7 @@ local function apply_window_options(session, bufnr, opts)
     end
   end
 
-  if opts.wrap ~= nil then
-    pcall(vim.api.nvim_buf_set_option, bufnr, "wrap", opts.wrap)
-  end
+  pcall(vim.api.nvim_buf_set_option, bufnr, "wrap", false)
 end
 
 function M.render(session, opts)
