@@ -1,6 +1,6 @@
 local M = {}
 
-local unpack = table.unpack or unpack
+local table_unpack = table.unpack or unpack
 
 local function to_string(value)
   if value == nil then
@@ -131,7 +131,7 @@ local function clip_text(text, width)
   local result = current
   while left <= right do
     local mid = math.floor((left + right) / 2)
-    local candidate = string.char(table.unpack(bytes, 1, mid))
+    local candidate = string.char(table_unpack(bytes, 1, mid))
     local w = display_width(candidate)
     if w > width then
       right = mid - 1
