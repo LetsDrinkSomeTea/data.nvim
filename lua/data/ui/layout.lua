@@ -1,5 +1,7 @@
 local M = {}
 
+local unpack = table.unpack or unpack
+
 local function to_string(value)
   if value == nil then
     return ""
