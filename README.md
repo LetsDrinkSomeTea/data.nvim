@@ -17,7 +17,7 @@
 
 ```lua
 {
-  "yourname/data.nvim",
+  "LetsDrinkSomeTea/data.nvim",
   config = function()
     require("data").setup({
       -- optional datasource registration
@@ -36,7 +36,7 @@
 
 ```lua
 use {
-  "yourname/data.nvim",
+  "LetsDrinkSomeTea/data.nvim",
   config = function()
     require("data").setup()
   end,
