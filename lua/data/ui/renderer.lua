@@ -194,7 +194,7 @@ function M.render(session, opts)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
   local normalized = {}
   for idx, line in ipairs(lines) do
-    normalized[idx] = line:gsub("\r", "")
+    normalized[idx] = line:gsub("\r", ""):gsub("\n", " ")
   end
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, normalized)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
